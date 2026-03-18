@@ -1,0 +1,165 @@
+# SECTION 1: RESPONSE DICTIONARY - Predefined replies for inputs
+class ResponseDatabase:
+    def __init__(self):
+        self.responses = {
+            "hello": ["Hi there!", "Hello!", "Hey! How can I help?"],
+            "hi": ["Hello!", "Hi! Nice to meet you.", "Hey there!"],
+            "hey": ["Hey!", "Hi! What's up?", "Hello!"],
+            "how are you": ["I'm doing great, thanks!", "I'm fine, thank you!", "Doing well!"],
+            "how do you do": ["I'm doing excellent!", "Very well, thanks!", "Great!"],
+            "what's your name": ["I'm ChatBot 3000!", "You can call me ChatBot.", "I'm your friendly ChatBot!"],
+            "bye": ["Goodbye!", "See you later!", "Bye! Have a great day!"],
+            "goodbye": ["Goodbye!", "Take care!", "See you soon!"],
+            "exit": ["Goodbye!", "Thanks for chatting!", "Bye!"],
+            "quit": ["See you later!", "Goodbye!", "Take care!"]
+        }
+    
+    def get_response(self, user_input):
+        """Get random response for user input"""
+        user_input = user_input.lower().strip()
+        for key in self.responses:
+            if key in user_input:
+                import random
+                return random.choice(self.responses[key])
+        return None
+
+# SECTION 2: INPUT PROCESSING - Text normalization and validation
+class InputProcessor:
+    @staticmethod
+    def normalize_input(text):
+        """Clean and normalize user input"""
+        return text.lower().strip()
+    
+    @staticmethod
+    def is_exit_command(text):
+        """Check if user wants to quit"""
+        exit_words = ["bye", "goodbye", "exit", "quit"]
+        normalized = text.lower().strip()
+        return any(word in normalized for word in exit_words)
+
+# SECTION 3: CONVERSATION LOGIC - if-elif style response matching
+class ConversationEngine:
+    def __init__(self):
+        self.response_db = ResponseDatabase()
+        self.conversation_count = 0
+    
+    def generate_response(self, user_input):
+        """Main response generation using if-elif logic"""
+        normalized_input = InputProcessor.normalize_input(user_input)
+        self.conversation_count += 1
+        
+        # Exact phrase matching (if-elif style)
+        if "hello" in normalized_input or "hi" in normalized_input or "hey" in normalized_input:
+            return self.response_db.get_response("hello")
+        elif "how are you" in normalized_input or "how do you do" in normalized_input:
+            return self.response_db.get_response("how are you")
+        elif "name" in normalized_input:
+            return self.response_db.get_response("what's your name")
+        elif "bye" in normalized_input or "goodbye" in normalized_input:
+            return self.response_db.get_response("bye")
+        else:
+            return self.get_default_response()
+    
+    def get_default_response(self):
+        """Fallback responses for unknown inputs"""
+        defaults = [
+            "Interesting! Tell me more.",
+            "I don't understand that. Can you rephrase?",
+            "That's curious. What do you mean?",
+            "Hmm, not sure about that one.",
+            "Can you explain that differently?"
+        ]
+        import random
+        return random.choice(defaults)
+
+# SECTION 4: CHAT HISTORY - Track conversation state
+class ChatHistory:
+    def __init__(self):
+        self.history = []
+    
+    def add_exchange(self, user_input, bot_response):
+        """Record conversation exchange"""
+        self.history.append({
+            "user": user_input,
+            "bot": bot_response,
+            "turn": len(self.history) + 1
+        })
+    
+    def show_summary(self):
+        """Display conversation summary"""
+        print("\nConversation Summary:")
+        print("-" * 30)
+        for exchange in self.history[-5:]:  # Last 5 exchanges
+            print(f"User: {exchange['user']}")
+            print(f"Bot:  {exchange['bot']}")
+            print()
+    
+    def get_stats(self):
+        """Return conversation statistics"""
+        return {
+            "total_exchanges": len(self.history),
+            "last_user_input": self.history[-1]["user"] if self.history else None
+        }
+
+# SECTION 5: USER INTERFACE FUNCTIONS - Input display and formatting
+class ChatInterface:
+    @staticmethod
+    def display_welcome():
+        """Show chatbot introduction"""
+        print("ChatBot 3000")
+        print("=" * 20)
+        print("Hello! I'm a simple chatbot.")
+        print("Type 'bye', 'goodbye', 'exit', or 'quit' to end.")
+        print("Try: hello, how are you, what's your name\n")
+    
+    @staticmethod
+    def show_chat_turn(user_input, bot_response, turn_num):
+        """Format single chat exchange"""
+        print(f"Turn {turn_num}:")
+        print(f"You: {user_input}")
+        print(f"Bot: {bot_response}\n")
+
+# SECTION 6: MAIN CHAT LOOP - while loop with input/output
+def main():
+    print("Simple Rule-Based ChatBot")
+    print("-" * 25)
+    
+    # Initialize components
+    engine = ConversationEngine()
+    history = ChatHistory()
+    interface = ChatInterface()
+    
+    # Welcome message
+    interface.display_welcome()
+    
+    # Main conversation loop
+    turn = 1
+    while True:
+        # Get user input
+        user_input = input("You: ").strip()
+        
+        # Check exit condition
+        if InputProcessor.is_exit_command(user_input):
+            final_response = engine.generate_response(user_input)
+            interface.show_chat_turn(user_input, final_response, turn)
+            history.add_exchange(user_input, final_response)
+            break
+        
+        # Skip empty input
+        if not user_input:
+            print("Please enter something to chat about.\n")
+            continue
+        
+        # Generate and display response
+        bot_response = engine.generate_response(user_input)
+        interface.show_chat_turn(user_input, bot_response, turn)
+        history.add_exchange(user_input, bot_response)
+        turn += 1
+    
+    # Show final stats
+    stats = history.get_stats()
+    print(f"Conversation ended after {stats['total_exchanges']} turns.")
+    print("Thanks for chatting!")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,200 @@
+import os
+import shutil
+import glob
+import re
+
+# SECTION 1: DIRECTORY OPERATIONS - Folder management
+class DirectoryManager:
+    def __init__(self):
+        self.source_dir = "input_emails"
+        self.output_dir = "extracted_emails"
+        self.setup_directories()
+    
+    def setup_directories(self):
+        """Create input and output directories"""
+        os.makedirs(self.source_dir, exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
+        print("Source directory: input_emails/")
+        print("Output directory: extracted_emails/")
+    
+    def create_sample_file(self):
+        """Create sample text file with emails for testing"""
+        sample_text = """
+        Contact our support team at support@company.com or sales@company.com
+        For technical issues: tech@support.org or help@domain.net
+        CEO email: john.doe@executive.com
+        Invalid formats: user@domain, @company.com, user@domaincom
+        More emails: marketing@brand.io, hr@company.org, info@test-domain.com
+        """
+        
+        filename = "sample_emails.txt"
+        filepath = os.path.join(self.source_dir, filename)
+        
+        with open(filepath, 'w') as f:
+            f.write(sample_text)
+        
+        print(f"Created sample file: {filepath}")
+
+# SECTION 2: EMAIL EXTRACTION - Regular expression pattern matching
+class EmailExtractor:
+    def __init__(self):
+        # Comprehensive email regex pattern
+        self.email_pattern = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
+    
+    def extract_emails_from_file(self, filepath):
+        """Extract all valid emails from text file"""
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            emails = self.email_pattern.findall(content)
+            return list(set(emails))  # Remove duplicates
+        
+        except FileNotFoundError:
+            print(f"File not found: {filepath}")
+            return []
+        except Exception as e:
+            print(f"Error reading file: {e}")
+            return []
+    
+    def extract_emails_from_directory(self, directory):
+        """Extract emails from all .txt files in directory"""
+        all_emails = []
+        txt_pattern = os.path.join(directory, "*.txt")
+        txt_files = glob.glob(txt_pattern)
+        
+        print(f"Scanning {len(txt_files)} .txt files...")
+        
+        for txt_file in txt_files:
+            emails = self.extract_emails_from_file(txt_file)
+            if emails:
+                print(f"  {os.path.basename(txt_file)}: {len(emails)} emails found")
+                all_emails.extend(emails)
+        
+        return list(set(all_emails))  # Remove duplicates across files
+
+# SECTION 3: FILE OUTPUT OPERATIONS - Save extracted emails
+class EmailSaver:
+    def save_emails_to_file(self, emails, output_filename="emails_extracted.txt"):
+        """Save extracted emails to output file"""
+        output_path = os.path.join("extracted_emails", output_filename)
+        
+        try:
+            with open(output_path, 'w') as f:
+                f.write("EXTRACTED EMAIL ADDRESSES\n")
+                f.write("=" * 50 + "\n\n")
+                
+                for i, email in enumerate(emails, 1):
+                    f.write(f"{i:3d}. {email}\n")
+                
+                f.write(f"\nTotal: {len(emails)} unique emails")
+            
+            print(f"Saved {len(emails)} emails to: extracted_emails/{output_filename}")
+            return True
+            
+        except Exception as e:
+            print(f"Error saving file: {e}")
+            return False
+
+# SECTION 4: REPORT GENERATION - Processing summary
+class AutomationReport:
+    def __init__(self, extractor, saver):
+        self.extractor = extractor
+        self.saver = saver
+    
+    def generate_summary(self, emails, input_files):
+        """Display automation results"""
+        print("\n" + "="*60)
+        print("EMAIL EXTRACTION SUMMARY")
+        print("="*60)
+        print(f"Input files scanned: {len(input_files)}")
+        print(f"Total unique emails: {len(emails)}")
+        
+        if emails:
+            print("\nSample emails found:")
+            for email in emails[:5]:
+                print(f"  - {email}")
+            if len(emails) > 5:
+                print(f"  ... and {len(emails)-5} more")
+        print("\nProcessing completed successfully.")
+
+# SECTION 5: USER INTERFACE - Interactive menu system
+class UserInterface:
+    @staticmethod
+    def show_menu():
+        print("\n" + "-"*40)
+        print("EMAIL EXTRACTION TOOL")
+        print("-"*40)
+        print("1. Create sample data")
+        print("2. Extract emails from files")
+        print("3. Full automation (create + extract)")
+        print("4. Exit")
+    
+    @staticmethod
+    def confirm_action():
+        while True:
+            response = input("\nContinue? (y/n): ").lower().strip()
+            if response in ['y', 'yes']:
+                return True
+            elif response in ['n', 'no']:
+                return False
+            print("Please enter 'y' or 'n'")
+
+# SECTION 6: MAIN WORKFLOW - Complete automation script
+def main():
+    print("EMAIL ADDRESS EXTRACTION TOOL")
+    print("Automates extraction of emails from text files\n")
+    
+    # Initialize components
+    dirs = DirectoryManager()
+    extractor = EmailExtractor()
+    saver = EmailSaver()
+    report = AutomationReport(extractor, saver)
+    
+    while True:
+        UserInterface.show_menu()
+        choice = input("\nSelect option: ").strip()
+        
+        if choice == '1':
+            # Create sample data
+            dirs.create_sample_file()
+            
+        elif choice == '2':
+            # Extract from existing files
+            txt_pattern = os.path.join(dirs.source_dir, "*.txt")
+            txt_files = glob.glob(txt_pattern)
+            
+            if txt_files:
+                if UserInterface.confirm_action():
+                    emails = extractor.extract_emails_from_directory(dirs.source_dir)
+                    if emails:
+                        saver.save_emails_to_file(emails)
+                        report.generate_summary(emails, txt_files)
+                    else:
+                        print("No emails found in files.")
+            else:
+                print("No .txt files found in input_emails/")
+                
+        elif choice == '3':
+            # Full automation
+            print("Running complete automation...")
+            dirs.create_sample_file()
+            
+            txt_pattern = os.path.join(dirs.source_dir, "*.txt")
+            txt_files = glob.glob(txt_pattern)
+            
+            if txt_files and UserInterface.confirm_action():
+                emails = extractor.extract_emails_from_directory(dirs.source_dir)
+                if emails:
+                    saver.save_emails_to_file(emails)
+                    report.generate_summary(emails, txt_files)
+                
+        elif choice == '4':
+            print("Thanks for using Email Extractor!")
+            break
+        
+        else:
+            print("Invalid option. Please try again.")
+
+if __name__ == "__main__":
+    main()

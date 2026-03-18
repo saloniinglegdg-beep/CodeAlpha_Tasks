@@ -1,0 +1,181 @@
+import random
+
+# SECTION 1: PREDEFINED WORD LIST - Exactly 5 programming words
+class WordBank:
+    WORDS = [
+        "PYTHON",
+        "CODE", 
+        "LIST",
+        "LOOP",
+        "CLASS"
+    ]
+    
+    def __init__(self):
+        self.secret_word = random.choice(self.WORDS).upper()
+    
+    def get_word(self):
+        return self.secret_word
+    
+    def get_length(self):
+        return len(self.secret_word)
+
+# SECTION 2: GAME INITIALIZATION - Clean game state
+class HangmanGame:
+    def __init__(self):
+        self.word_bank = WordBank()
+        self.display_word = ['_'] * self.word_bank.get_length()
+        self.guessed_letters = set()
+        self.wrong_guesses = 0
+        self.max_wrong = 6
+        
+    def reset(self):
+        """Start a new game"""
+        self.word_bank = WordBank()
+        self.display_word = ['_'] * self.word_bank.get_length()
+        self.guessed_letters = set()
+        self.wrong_guesses = 0
+        print("\n NEW HANGMAN GAME STARTED!")
+        print(f"Word has {self.word_bank.get_length()} letters")
+
+# SECTION 3: PLAYER INPUT PROCESSING - Single letter validation
+    def make_guess(self, letter):
+        letter = letter.upper()
+        
+        # Validate input
+        if not letter.isalpha():
+            print(" Enter only letters A-Z!")
+            return False
+            
+        if letter in self.guessed_letters:
+            print(f" Already guessed '{letter}'!")
+            return False
+        
+        self.guessed_letters.add(letter)
+        
+        # Check if letter is in word
+        correct = False
+        secret_word = self.word_bank.get_word()
+        for i in range(len(secret_word)):
+            if secret_word[i] == letter:
+                self.display_word[i] = letter
+                correct = True
+        
+        if correct:
+            print(f" '{letter}' is in the word!")
+        else:
+            self.wrong_guesses += 1
+            print(f" '{letter}' not in word!")
+            self.show_hangman()
+        
+        return True
+
+# SECTION 4: HANGMAN ASCII ART - 6 progressive stages
+    def show_hangman(self):
+        stages = [
+            """
+  +---+
+  |   |
+      |
+      |
+     / \\
+            """,
+            """
+  +---+
+  |   |
+  O   |
+      |
+     / \\
+            """,
+            """
+  +---+
+  |   |
+  O   |
+  |   |
+     / \\
+            """,
+            """
+  +---+
+  |   |
+  O   |
+ /|   |
+     / \\
+            """,
+            """
+  +---+
+  |   |
+  O   |
+/| \\  |
+     / \\
+            """,
+            """
+  +---+
+  |   |
+  O   |
+/| \\  |
+ / \\  |
+            """
+        ]
+        
+        stage = min(self.wrong_guesses - 1, 5)
+        print(stages[stage])
+        print(f" Lives left: {self.max_wrong - self.wrong_guesses}")
+
+# SECTION 5: GAME STATE CHECKING - Win/Lose conditions
+    def is_game_over(self):
+        # Check win condition
+        if '_' not in self.display_word:
+            secret = self.word_bank.get_word()
+            print(f"\n CONGRATULATIONS! You won!")
+            print(f"The word was: {secret}")
+            return True
+        
+        # Check lose condition
+        if self.wrong_guesses >= self.max_wrong:
+            secret = self.word_bank.get_word()
+            print(f"\n GAME OVER!")
+            print(f"The word was: {secret}")
+            return True
+        
+        return False
+    
+    def show_current_state(self):
+        print(f"Word: {' '.join(self.display_word)}")
+        print(f"Guessed: {', '.join(sorted(self.guessed_letters))}")
+
+# SECTION 6: MAIN GAME LOOP - Console interface
+def main():
+    game = HangmanGame()
+    
+    print(" HANGMAN GAME")
+    print("=" * 25)
+    print("Guess the programming word!")
+    print("5 words from: PYTHON, CODE, LIST, LOOP, CLASS")
+    print("You have 6 wrong guesses!\n")
+    
+    while True:
+        # Show game state
+        game.show_current_state()
+        game.show_hangman()
+        
+        # Get player input
+        while True:
+            guess = input("Enter a letter: ").strip().upper()
+            
+            if len(guess) == 1:
+                break
+            print(" Enter exactly ONE letter!")
+        
+        # Process guess
+        game.make_guess(guess)
+        
+        # Check game over
+        if game.is_game_over():
+            play_again = input("\nPlay again? (y/n): ").lower().strip()
+            if play_again == 'y':
+                game.reset()
+            else:
+                print(" Thanks for playing!")
+                return
+
+if __name__ == "__main__":
+    main()
